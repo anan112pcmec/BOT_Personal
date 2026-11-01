@@ -1,6 +1,5 @@
 import "dotenv/config";
 import fs from "node:fs";
-import readline from "node:readline";
 import pino from "pino";
 import makeWASocket, {
     useMultiFileAuthState,
@@ -10,25 +9,17 @@ import makeWASocket, {
     Browsers,
 } from "@whiskeysockets/baileys";
 import handleMessage from "./bot.js";
-import { BOT_NAME } from "./config.js";
+import { BOT_NAME, PHONE_NUMBER } from "./config.js";
 import { errMessage } from "./utils.js";
 
 // Folder session baru (bukan JarvisSesi) supaya pairing mulai dari nol di Baileys v7
 const SESSION_PATH = "./FaizSesi";
 const logger = pino({ level: process.env.LOG_LEVEL || "error" });
 
-let nomorHP = (process.env.PHONE_NUMBER || "").replace(/\D/g, "");
+// Nomor di-hardcode di config.ts. Ambil digitnya aja, dan buang "0" nyasar setelah 62
+// (62081xxx -> 6281xxx) karena format internasional gak pake 0 di depan.
+const nomorHP = PHONE_NUMBER.replace(/\D/g, "").replace(/^620/, "62");
 let retry = 0;
-
-function tanya(q: string): Promise<string> {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    return new Promise((resolve) =>
-        rl.question(q, (ans) => {
-            rl.close();
-            resolve(ans);
-        })
-    );
-}
 
 /** Ambil kode status dari error koneksi Baileys (bentuknya Boom: error.output.statusCode). */
 function statusCodeOf(err: unknown): number | undefined {
@@ -40,13 +31,10 @@ function statusCodeOf(err: unknown): number | undefined {
 async function startBot(): Promise<void> {
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_PATH);
 
-    // Belum pernah login? Minta nomor dulu (sebelum socket dibuat)
-    if (!state.creds.registered && !nomorHP) {
-        nomorHP = (await tanya("📱 Masukkan nomor WA bot (format 62xxx): ")).replace(/\D/g, "");
-        if (nomorHP.length < 8) {
-            console.log("❌ Nomor gak valid");
-            process.exit(1);
-        }
+    // Belum pernah login? Pastiin nomor di config.ts valid (sebelum socket dibuat)
+    if (!state.creds.registered && nomorHP.length < 8) {
+        console.log("❌ PHONE_NUMBER di config.ts gak valid (format 62xxx)");
+        process.exit(1);
     }
 
     // Pakai versi WhatsApp Web terbaru; kalo gagal diambil, pakai bawaan Baileys

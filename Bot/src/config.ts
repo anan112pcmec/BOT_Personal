@@ -4,8 +4,11 @@
 
 export const BOT_NAME = "Faiz";
 
+// Nomor WA bot buat pairing (format 62xxx). Dipake cuma pas pertama kali login.
+export const PHONE_NUMBER = "62081389709265";
+
 // Kata yang bikin bot nyaut. Cocok per-kata utuh, jadi "izin" / "wiz" gak ikut kepancing.
-export const TRIGGERS: readonly string[] = ["iz", "Iz", "paiz", "pais", "faiz", "Faiz", "Izz", "izz", "nan", "is", "Is"];
+export const TRIGGERS: readonly string[] = ["jek", "Jek"];
 
 // Jeda minimal antar balasan ke orang yang sama di chat yang sama (ms),
 // biar kuota Gemini gratisan gak kebakar gara-gara spam.
